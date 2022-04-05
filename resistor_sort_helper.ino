@@ -6,16 +6,14 @@
 #define PREV_PAGE 11	  // previous page button adress
 #define NEXT_PAGE 12	  // next page button adress
 #define SHIFT 2			  // frees up first few ports
+#define TOLERANCE 0.10
 
 int resistors[] = {
 	// valid resistor values
-	50,
-	120,
-	220,
-	250,
+	100,
 	560,
+	250,
 	280,
-	6800,
 	100,
 	1200,
 	1500,
@@ -26,6 +24,8 @@ int resistors[] = {
 	3000,
 	3500,
 	3750,
+	780,
+	7020,
 	4000,
 	4100,
 	4500,
@@ -111,8 +111,8 @@ int itemOnBoard(float val)
 {
 	for (int i = 0; i < BOARD_ITEMS; i++)
 	{
-		int min_val = board[i] * 0.90; // minimum tolerance
-		int max_val = board[i] * 1.10; // maximum tolerance
+		int min_val = board[i] * (1 - TOLERANCE); // minimum tolerance
+		int max_val = board[i] * (1 + TOLERANCE); // maximum tolerance
 
 		if (val > min_val && val < max_val) // is val within tolerance?
 		{
