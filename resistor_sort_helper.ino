@@ -91,7 +91,6 @@ void showContainer(int index, long resistor);
 
 void setup()
 {
-	Serial.begin(9600);
 	// initialize display
 	lcd.init();
 	lcd.createChar(1, ohms);
@@ -99,6 +98,8 @@ void setup()
 	lcd.home();
 	// --- TABLE OUTPUTS ---
 	// Addressed output
+	pinMode(RANGE_RELAY, OUTPUT);
+	pinMode(OUT_OF_RNG_LED, OUTPUT);
 	// X activates on HIGH
 	pinMode(BOARD_ADDRX_1, OUTPUT);
 	pinMode(BOARD_ADDRX_2, OUTPUT);
@@ -122,6 +123,8 @@ void loop()
 	voltageRead = analogRead(V_READ);
 	// converts arduino's 1024 bit 5v mapping back into volts
 	voltageRead *= (5.0 / 1023.0);
+	// calculates the value of r1
+	r1 = (5.0 * r2) / voltageRead - r2;
 	// changes resistor on relay if it's over RS_VALUE
 	if (r1 < RS_VALUE)
 	{
@@ -133,8 +136,7 @@ void loop()
 		r2 = R2_2;
 		digitalWrite(RANGE_RELAY, HIGH);
 	}
-	// calculates the value of r1
-	r1 = (5.0 * r2) / voltageRead - r2;
+
 	showContainer(isValidResistor(r1), r1);
 
 	if (voltageRead != 0)
@@ -154,8 +156,9 @@ void loop()
 
 int isValidResistor(long val)
 {
-	// variable is long to be able to fit in resistors in the order of 100K
+	// variable is long so it can fit in resistors in the order of 100K
 	long curr_res = 0;
+
 	for (int i = 0; i < BOARD_ITEMS; i++)
 	{
 		// 10^j = the resistor ranges 100, 1K, 10K, 100K
@@ -202,6 +205,9 @@ void showContainer(int index, long resistor)
 {
 	if (index == -1)
 	{
+		digitalWriteBoardX(LOW, LOW, LOW);
+		digitalWriteBoardY(LOW, LOW, LOW, LOW);
+		digitalWriteMult(LOW, LOW, LOW, LOW);
 		digitalWrite(OUT_OF_RNG_LED, HIGH);
 	}
 	else
@@ -249,24 +255,18 @@ void showContainer(int index, long resistor)
 		}
 
 		// show the resistor's range
-		switch ((int)log10(resistor))
-		{
-		// 1K
-		case 3:
-			digitalWriteMult(LOW, HIGH, LOW, LOW);
-			break;
-		// 10K
-		case 4:
-			digitalWriteMult(LOW, LOW, HIGH, LOW);
-			break;
-		// 100K
-		case 5:
-			digitalWriteMult(LOW, LOW, LOW, HIGH);
-			break;
+		// switch ((int)log10(resistor))
 		// 100 or less
-		default:
+		if (resistor / 100 < 10)
 			digitalWriteMult(HIGH, LOW, LOW, LOW);
-			break;
-		}
+		// 1K
+		else if (resistor / 1000 < 10)
+			digitalWriteMult(LOW, HIGH, LOW, LOW);
+		// 10K
+		else if (resistor / 10000 < 10)
+			digitalWriteMult(LOW, LOW, HIGH, LOW);
+		// 100K
+		else if (resistor / 100000 < 10)
+			digitalWriteMult(LOW, LOW, LOW, HIGH);
 	}
 }
